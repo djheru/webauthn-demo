@@ -228,4 +228,12 @@ export function toUint8Array(buf: Buffer): Uint8Array {
   return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
 }
 
+export function parseTransports(raw: string | null): string[] | undefined {
+  return raw ? JSON.parse(raw) : undefined;
+}
+
+export function countPasskeysForUser(userId: string): number {
+  return (countPasskeysByUser.get(userId) as { count: number }).count;
+}
+
 export default db;

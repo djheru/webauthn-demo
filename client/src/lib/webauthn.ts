@@ -2,7 +2,7 @@ import {
   startRegistration,
   startAuthentication,
 } from "@simplewebauthn/browser";
-import { apiFetch } from "./api";
+import { apiFetch, fetchMe } from "./api";
 
 export type RegisterResult = {
   verified: boolean;
@@ -65,10 +65,8 @@ export async function loginWithPasskey(
 }
 
 export async function addPasskey(): Promise<RegisterResult> {
-  // Get current user's email from /me, then register another passkey
-  const meResp = await fetch("/api/me", { credentials: "same-origin" });
-  if (!meResp.ok) throw new Error("Not authenticated");
-  const me = await meResp.json();
+  const me = await fetchMe();
+  if (!me) throw new Error("Not authenticated");
   return registerPasskey(me.email);
 }
 

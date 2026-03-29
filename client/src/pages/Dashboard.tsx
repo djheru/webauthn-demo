@@ -1,26 +1,32 @@
-import { useState, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../App";
-import { apiFetch, logout, renamePasskeyApi, deletePasskeyApi, type UserInfo } from "../lib/api";
-import { addPasskey, stepUpVerify } from "../lib/webauthn";
 import {
-  KeyRound,
-  LogOut,
-  Fingerprint,
-  Plus,
-  Pencil,
-  Trash2,
-  ShieldCheck,
   AlertCircle,
   CheckCircle2,
-  Monitor,
-  Smartphone,
   Clock,
+  Fingerprint,
+  KeyRound,
+  LogOut,
+  Monitor,
+  Pencil,
+  Plus,
   Shield,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
   X,
-  ArrowLeft,
   Zap,
 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../App";
+import {
+  apiFetch,
+  deletePasskeyApi,
+  logout,
+  renamePasskeyApi,
+  resetCsrfToken,
+  type UserInfo,
+} from "../lib/api";
+import { addPasskey, stepUpVerify } from "../lib/webauthn";
 
 type PasskeyInfo = UserInfo["passkeys"][number];
 
@@ -174,7 +180,6 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [stepUpActive, setStepUpActive] = useState(false);
-  const [payoutResult, setPayoutResult] = useState<string | null>(null);
 
   const clearMessages = useCallback(() => {
     setError(null);
@@ -231,7 +236,6 @@ export default function Dashboard() {
 
   async function handleStepUp() {
     clearMessages();
-    setPayoutResult(null);
     setLoading(true);
     try {
       const result = await stepUpVerify();
@@ -252,27 +256,28 @@ export default function Dashboard() {
     }
   }
 
-  async function handlePayout() {
+  async function handleSensitiveAction() {
     clearMessages();
     setLoading(true);
     try {
-      const resp = await apiFetch("/api/billing/payout", {
+      const resp = await apiFetch("/api/sensitive/action", {
         method: "POST",
         body: JSON.stringify({ amount: 100, currency: "USD" }),
       });
       const data = await resp.json();
       if (resp.ok) {
-        setPayoutResult("Payout processed successfully.");
+        setSuccess("Sensitive action processed successfully.");
       } else {
         if (resp.status === 403) {
+          resetCsrfToken();
           setStepUpActive(false);
           setError("Step-up expired. Please verify again.");
         } else {
-          setError(data.error || "Payout failed");
+          setError(data.error || "Sensitive action failed");
         }
       }
     } catch (err: any) {
-      setError(err.message || "Payout failed");
+      setError(err.message || "Sensitive action failed");
     } finally {
       setLoading(false);
     }
@@ -432,9 +437,7 @@ export default function Dashboard() {
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    stepUpActive
-                      ? "bg-vault-400 animate-pulse"
-                      : "bg-zinc-700"
+                    stepUpActive ? "bg-vault-400 animate-pulse" : "bg-zinc-700"
                   }`}
                 />
                 <span
@@ -466,21 +469,14 @@ export default function Dashboard() {
                 </button>
 
                 <button
-                  onClick={handlePayout}
+                  onClick={handleSensitiveAction}
                   disabled={loading || !stepUpActive}
                   className="vault-btn-ghost w-full text-sm"
                 >
                   <Zap className="w-4 h-4" />
-                  Process Test Payout
+                  Elevated Auth Action
                 </button>
               </div>
-
-              {payoutResult && (
-                <div className="mt-4 flex items-start gap-2 bg-vault-950/50 border border-vault-800/30 rounded-xl p-3 animate-slide-down">
-                  <CheckCircle2 className="w-4 h-4 text-vault-400 mt-0.5 shrink-0" />
-                  <span className="text-vault-300 text-sm">{payoutResult}</span>
-                </div>
-              )}
             </div>
 
             {/* Session info card */}
