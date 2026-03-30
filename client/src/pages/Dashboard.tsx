@@ -188,7 +188,7 @@ export default function Dashboard() {
 
   async function handleLogout() {
     await logout();
-    navigate("/auth");
+    navigate("/");
   }
 
   async function handleAddPasskey() {
